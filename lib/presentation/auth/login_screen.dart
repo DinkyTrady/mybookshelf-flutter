@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:web_flut/presentation/auth/sign_up_screen.dart';
 import 'package:web_flut/services/auth_service.dart';
-import 'package:web_flut/presentation/auth/register_screen.dart';
-import 'package:web_flut/presentation/home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -58,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (user != null) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (BuildContext context) => const HomeScreen(),
+            builder: (BuildContext context) => const LoginScreen(),
           ),
         );
       } else {
@@ -138,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         onPressed: () {
                           Navigator.of(context).push(
                             PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => const RegisterScreen(),
+                              pageBuilder: (context, animation, secondaryAnimation) => const SignUpScreen(),
                               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                 return FadeTransition(opacity: animation, child: child);
                               },
