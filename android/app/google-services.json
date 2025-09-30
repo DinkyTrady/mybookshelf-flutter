@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "503873752531",
+    "project_id": "library-open",
+    "storage_bucket": "library-open.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503873752531:android:b66752424527d55d113326",
+        "android_client_info": {
+          "package_name": "com.example.web_flut"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1mjgs8_n7v-FzO_R88lrPElN1qlGSROI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
