@@ -1,204 +1,178 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:web_flut/models/book.dart';
-import 'package:web_flut/models/comic.dart';
-import 'package:web_flut/models/library_item.dart';
-import 'package:web_flut/services/bookshelf_service.dart';
+import 'package:web_flut/models/books/base_book.dart';
+import 'package:web_flut/models/books/comic.dart';
+import 'package:web_flut/models/books/comic_type.dart';
+import 'package:web_flut/models/books/light_novel.dart';
+import 'package:web_flut/data/default_data.dart';
+
+import 'package:web_flut/models/books/novel.dart';
 
 /// Enum for sorting options
 enum SortOption { byTitle, byAuthor, byDate }
 
 /// Enum for item type filter
-enum ItemTypeFilter { all, booksOnly, komiksOnly }
+enum ItemTypeFilter { all, novels, lightNovels, comics, manga, manhwa, manhua }
 
 /// View model for the Home Screen
 /// Implements proper encapsulation of business logic
 class HomeViewModel extends ChangeNotifier {
-  // Services
-  final BookshelfService _bookshelfService = BookshelfService();
-  
-  // State
-  List<LibraryItem> _items = [];
+  List<BaseBook> _items = [];
   String _searchQuery = '';
   SortOption _sortOption = SortOption.byDate;
   ItemTypeFilter _itemTypeFilter = ItemTypeFilter.all;
   bool _isLoading = false;
 
-  // Getters
-  List<LibraryItem> get items => _items;
+  List<BaseBook> get items => _items;
   String get searchQuery => _searchQuery;
   SortOption get sortOption => _sortOption;
   ItemTypeFilter get itemTypeFilter => _itemTypeFilter;
   bool get isLoading => _isLoading;
-  
-  // Filtered getters
-  List<Book> get books => _items.whereType<Book>().toList();
-  List<Comic> get komiks => _items.whereType<Comic>().toList();
-  
-  // Read status filtered getters
-  List<LibraryItem> get unreadItems => _items.where((item) => !item.isFinished).toList();
-  List<LibraryItem> get readItems => _items.where((item) => item.isFinished).toList();
 
-  // Filtered and sorted items with type filtering
-  List<LibraryItem> get filteredUnreadItems {
-    List<LibraryItem> result = unreadItems;
+  List<BaseBook> get unreadItems =>
+      _items.where((item) => !item.isFinished).toList();
+  List<BaseBook> get readItems =>
+      _items.where((item) => item.isFinished).toList();
 
-    // Apply type filter
-    if (_itemTypeFilter == ItemTypeFilter.booksOnly) {
-      result = result.whereType<Book>().toList();
-    } else if (_itemTypeFilter == ItemTypeFilter.komiksOnly) {
-      result = result.whereType<Comic>().toList();
-    }
+  List<BaseBook> get filteredUnreadItems => _filterAndSort(unreadItems);
+  List<BaseBook> get filteredReadItems => _filterAndSort(readItems);
 
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      result = _filterItemsBySearch(result);
-    }
-
-    // Apply sorting
-    return _sortItems(result);
-  }
-
-  List<LibraryItem> get filteredReadItems {
-    List<LibraryItem> result = readItems;
-
-    // Apply type filter
-    if (_itemTypeFilter == ItemTypeFilter.booksOnly) {
-      result = result.whereType<Book>().toList();
-    } else if (_itemTypeFilter == ItemTypeFilter.komiksOnly) {
-      result = result.whereType<Comic>().toList();
-    }
-
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      result = _filterItemsBySearch(result);
-    }
-
-    // Apply sorting
-    return _sortItems(result);
-  }
-
-  // Constructor
   HomeViewModel() {
     loadItems();
   }
-  
-  /// Load items from the service
+
   Future<void> loadItems() async {
     _setLoading(true);
-    try {
-      _items = await _bookshelfService.getItems();
-      notifyListeners();
-    } catch (e) {
-      // Error handling could be added here
-    } finally {
-      _setLoading(false);
-    }
+    // In-memory data
+    _items = defaultBooks;
+    notifyListeners();
+    _setLoading(false);
   }
-  
-  /// Add a new item
-  Future<void> addItem(LibraryItem item) async {
+
+  Future<void> addItems(BaseBook book) async {
     _setLoading(true);
-    try {
-      await _bookshelfService.addItem(item);
-      await loadItems();
-    } catch (e) {
-      // Error handling could be added here
-    } finally {
-      _setLoading(false);
-    }
+    _items.add(book);
+    notifyListeners();
+    _setLoading(false);
   }
-  
-  /// Update search query
+
   void updateSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
   }
-  
-  /// Update sort option
+
   void updateSortOption(SortOption option) {
     _sortOption = option;
     notifyListeners();
   }
 
-  /// Update item type filter
   void updateItemTypeFilter(ItemTypeFilter filter) {
-    // This forces the filter to reset completely when changing types
     if (_itemTypeFilter != filter) {
       _itemTypeFilter = filter;
       notifyListeners();
     }
   }
 
-  /// Delete an item
+  Future<void> updateItem(BaseBook book) async {
+    _setLoading(true);
+    final index = _items.indexWhere((item) => item.id == book.id);
+    if (index != -1) {
+      _items[index] = book;
+    }
+    notifyListeners();
+    _setLoading(false);
+  }
+
   Future<void> deleteItem(String id) async {
     _setLoading(true);
-    try {
-      await _bookshelfService.deleteItem(id);
-      await loadItems();
-    } catch (e) {
-      // Error handling could be added here
-    } finally {
-      _setLoading(false);
-    }
+    _items.removeWhere((item) => item.id == id);
+    notifyListeners();
+    _setLoading(false);
   }
-  
-  /// Toggle reading status
-  Future<void> toggleFinishedStatus(LibraryItem item) async {
+
+  Future<void> toggleFinishedStatus(BaseBook book) async {
     _setLoading(true);
-    try {
-      await _bookshelfService.toggleFinishedStatus(item);
-      await loadItems();
-    } catch (e) {
-      // Error handling could be added here
-    } finally {
-      _setLoading(false);
+    final index = _items.indexWhere((item) => item.id == book.id);
+    if (index != -1) {
+      _items[index] = book.copyWith(isFinished: !book.isFinished);
+      notifyListeners();
     }
+    _setLoading(false);
   }
-  
-  /// Set loading state
+
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
-  
-  /// Filter items by search query
-  List<LibraryItem> _filterItemsBySearch(List<LibraryItem> items) {
-    if (_searchQuery.isEmpty) {
-      return items;
+
+  List<BaseBook> _filterAndSort(List<BaseBook> items) {
+    List<BaseBook> result = items;
+
+    // Type filter
+    switch (_itemTypeFilter) {
+      case ItemTypeFilter.novels:
+        result = result.whereType<Novel>().toList();
+        break;
+      case ItemTypeFilter.lightNovels:
+        result = result.whereType<LightNovel>().toList();
+        break;
+      case ItemTypeFilter.comics:
+        result = result.whereType<Comic>().toList();
+        break;
+      case ItemTypeFilter.manga:
+        result = result
+            .where((item) => item is Comic && item.type == ComicType.manga)
+            .toList();
+        break;
+      case ItemTypeFilter.manhwa:
+        result = result
+            .where((item) => item is Comic && item.type == ComicType.manhwa)
+            .toList();
+        break;
+      case ItemTypeFilter.manhua:
+        result = result
+            .where((item) => item is Comic && item.type == ComicType.manhua)
+            .toList();
+        break;
+      case ItemTypeFilter.all:
+        break;
     }
-    
-    final query = _searchQuery.toLowerCase();
-    return items.where((item) {
-      final titleMatch = item.title.toLowerCase().contains(query);
-      final authorMatch = item.author.toLowerCase().contains(query); // Using polymorphic author property
 
-      // Additional type-specific search criteria
-      if (item is Comic) {
-        final genreMatch = item.genre.toLowerCase().contains(query);
-        final typeMatch = item.type.toLowerCase().contains(query);
+    // Search filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      result = result.where((item) {
+        final titleMatch = item.title.toLowerCase().contains(query);
+        final authorMatch = item.author.fullName.toLowerCase().contains(query);
+        final genreMatch =
+            item.genres?.any((g) => g.name.toLowerCase().contains(query)) ??
+            false;
+        final typeMatch =
+            item.type
+                ?.toString()
+                .split('.')
+                .last
+                .toLowerCase()
+                .contains(query) ??
+            false;
         return titleMatch || authorMatch || genreMatch || typeMatch;
-      }
+      }).toList();
+    }
 
-      return titleMatch || authorMatch;
-    }).toList();
-  }
-  
-  /// Sort items based on the selected sort option
-  List<LibraryItem> _sortItems(List<LibraryItem> items) {
-    final sortedItems = List<LibraryItem>.from(items);
-    
-    sortedItems.sort((a, b) {
+    // Sorting
+    result.sort((a, b) {
       switch (_sortOption) {
         case SortOption.byTitle:
           return a.title.toLowerCase().compareTo(b.title.toLowerCase());
         case SortOption.byAuthor:
-          // Properly handle author comparison for all LibraryItem types
-          return a.author.toLowerCase().compareTo(b.author.toLowerCase());
+          return a.author.fullName.toLowerCase().compareTo(
+            b.author.fullName.toLowerCase(),
+          );
         case SortOption.byDate:
-          return b.insertedAt.compareTo(a.insertedAt); // Newest first
+          return b.updatedAt?.compareTo(a.updatedAt ?? DateTime(0)) ?? 0;
       }
     });
-    
-    return sortedItems;
+
+    return result;
   }
 }

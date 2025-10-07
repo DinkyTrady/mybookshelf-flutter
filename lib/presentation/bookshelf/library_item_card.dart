@@ -1,48 +1,50 @@
 import 'package:flutter/material.dart';
-import 'package:web_flut/models/book.dart';
-import 'package:web_flut/models/library_item.dart';
-import 'package:web_flut/models/comic.dart';
-import 'package:web_flut/presentation/bookshelf/book_details_screen.dart';
-import 'package:web_flut/services/bookshelf_service.dart';
+import 'package:web_flut/models/books/base_book.dart';
+import 'package:web_flut/models/books/comic.dart';
+import 'package:web_flut/models/books/light_novel.dart';
 
-/// A reusable card widget that displays a library item (Book or Komik)
+import 'package:web_flut/models/books/novel.dart';
+import 'package:web_flut/presentation/home/home_view_model.dart';
+import 'package:web_flut/presentation/bookshelf/book_details_screen.dart';
+import 'package:web_flut/presentation/bookshelf/book_form.dart';
+
+/// A reusable card widget that displays a library item (BaseBook)
 class LibraryItemCard extends StatelessWidget {
-  final LibraryItem item;
-  final VoidCallback onItemChanged;
+  final BaseBook item;
+  final HomeViewModel viewModel;
 
   const LibraryItemCard({
     super.key,
     required this.item,
-    required this.onItemChanged,
+    required this.viewModel,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bookshelfService = BookshelfService();
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       elevation: 2,
       color: theme.scaffoldBackgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         contentPadding: const EdgeInsets.all(16.0),
         leading: _buildLeadingImage(),
         title: Text(
-          item.title, 
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+          item.title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         subtitle: _buildSubtitle(theme),
-        trailing: _buildTrailingActions(theme, bookshelfService, context),
+        trailing: _buildTrailingActions(theme, context),
         onTap: () => _navigateToDetails(context),
       ),
     );
   }
-  
+
   /// Builds the leading image for the card
   Widget _buildLeadingImage() {
     return SizedBox(
@@ -56,61 +58,63 @@ class LibraryItemCard extends StatelessWidget {
       ),
     );
   }
-  
+
   /// Builds the subtitle based on the item type
   Widget? _buildSubtitle(ThemeData theme) {
-    if (item is Book) {
-      final book = item as Book;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 4),
-          Text(item.author, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 8),
-          if (book.isReading && !book.isFinished)
-            LinearProgressIndicator(
-              value: book.progressPercentage,
-              backgroundColor: theme.colorScheme.surface.withAlpha(128),
-              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.secondary),
-            ),
-        ],
-      );
+    String subtitleText = '';
+    double progressValue = 0.0;
+    bool showProgress = false;
+
+    if (item is Novel) {
+      final novel = item as Novel;
+      subtitleText = '${novel.author.fullName} • ${novel.pageCount} pages';
+      progressValue = novel.progressPercentage;
+      showProgress = novel.isReading && !novel.isFinished;
+    } else if (item is LightNovel) {
+      final lightNovel = item as LightNovel;
+      subtitleText =
+          '${lightNovel.author.fullName} • ${lightNovel.pageCount} pages';
+      progressValue = lightNovel.progressPercentage;
+      showProgress = lightNovel.isReading && !lightNovel.isFinished;
     } else if (item is Comic) {
-      final komik = item as Comic;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 4),
-          Text('${komik.type} • ${komik.genre}', style: theme.textTheme.bodyMedium),
-          Text('by ${komik.author}', style: theme.textTheme.bodySmall),
-          const SizedBox(height: 4),
-          Text('${komik.currentChapter}/${komik.chapters} chapters • ${komik.status}',
-               style: theme.textTheme.bodySmall),
-          const SizedBox(height: 4),
-          if (komik.isReading && !komik.isFinished)
-            LinearProgressIndicator(
-              value: komik.progressPercentage,
-              backgroundColor: theme.colorScheme.surface.withAlpha(128),
-              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.secondary),
-            ),
-        ],
-      );
+      final comic = item as Comic;
+      final genreNames = comic.genres?.map((g) => g.name).join(', ') ?? 'N/A';
+      subtitleText =
+          '${comic.type} • $genreNames • ${comic.author.fullName} • ${comic.chapters} chapters';
+      progressValue = comic.progressPercentage;
+      showProgress = comic.isReading && !comic.isFinished;
     }
-    return null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 4),
+        Text(subtitleText, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 8),
+        if (showProgress)
+          LinearProgressIndicator(
+            value: progressValue,
+            backgroundColor: theme.colorScheme.surface.withAlpha(128),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              theme.colorScheme.secondary,
+            ),
+          ),
+      ],
+    );
   }
-  
+
   /// Builds the trailing actions based on the item type
-  Widget? _buildTrailingActions(ThemeData theme, BookshelfService service, BuildContext context) {
+  Widget? _buildTrailingActions(ThemeData theme, BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           icon: Icon(
             item.isFinished ? Icons.check_box : Icons.check_box_outline_blank,
-            color: item.isFinished ? theme.colorScheme.secondary : null
+            color: item.isFinished ? theme.colorScheme.secondary : null,
           ),
           tooltip: item.isFinished ? 'Mark as Unread' : 'Mark as Read',
-          onPressed: () => _toggleFinishedStatus(service),
+          onPressed: () => viewModel.toggleFinishedStatus(item),
         ),
         IconButton(
           icon: const Icon(Icons.edit_outlined),
@@ -120,31 +124,72 @@ class LibraryItemCard extends StatelessWidget {
         IconButton(
           icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
           tooltip: 'Delete',
-          onPressed: () => _showDeleteDialog(context, service),
+          onPressed: () =>
+              _showDeleteDialog(context, item.runtimeType.toString()),
         ),
       ],
     );
   }
-  
-  /// Toggles the finished status of the item
-  void _toggleFinishedStatus(BookshelfService service) async {
-    await service.toggleFinishedStatus(item);
-    onItemChanged();
-  }
-  
+
   /// Shows the edit dialog
-  void _showEditDialog(BuildContext context) {
-    // Edit dialog implementation (will be added in HomeScreen refactoring)
-    onItemChanged();
+  void _showEditDialog(BuildContext context) async {
+    BookType bookType;
+    if (item is Novel) {
+      bookType = BookType.novel;
+    } else if (item is LightNovel) {
+      bookType = BookType.lightNovel;
+    } else if (item is Comic) {
+      bookType = BookType.comic;
+    } else {
+      // Default to novel or handle error
+      bookType = BookType.novel;
+    }
+
+    final formKey = GlobalKey<BookFormState>();
+    final navigator = Navigator.of(context); // Get the navigator
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit ${bookType.name}'),
+          content: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            constraints: BoxConstraints(
+              maxWidth: 600,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: SingleChildScrollView(
+              child: BookForm(key: formKey, item: item, bookType: bookType),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => navigator.pop(),
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () async {
+                final updatedItem = formKey.currentState?.saveAndGetItem();
+                if (updatedItem != null) {
+                  await viewModel.updateItem(updatedItem);
+                  navigator.pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
-  
+
   /// Shows the delete confirmation dialog
-  void _showDeleteDialog(BuildContext context, BookshelfService service) {
+  void _showDeleteDialog(BuildContext context, String itemType) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${item is Comic ? 'Komik' : 'Book'}'),
-        content: Text('Are you sure you want to delete this ${item is Comic ? 'komik' : 'book'}?'),
+        title: Text('Delete $itemType'),
+        content: Text('Are you sure you want to delete this $itemType?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -153,7 +198,7 @@ class LibraryItemCard extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _deleteItem(service);
+              viewModel.deleteItem(item.id);
             },
             child: const Text('Delete'),
           ),
@@ -161,13 +206,7 @@ class LibraryItemCard extends StatelessWidget {
       ),
     );
   }
-  
-  /// Deletes the item from the bookshelf
-  void _deleteItem(BookshelfService service) async {
-    await service.deleteItem(item.id);
-    onItemChanged();
-  }
-  
+
   /// Navigates to the details screen for the item
   void _navigateToDetails(BuildContext context) {
     Navigator.push(

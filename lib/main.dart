@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:web_flut/presentation/splash/splash_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:web_flut/firebase_options.dart';
 
-void main() {
+void main() async {
+  // Set default locale into indonesian
+  Intl.defaultLocale = 'id';
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MyApp());
 }
 

@@ -25,7 +25,7 @@ class CustomButton extends StatelessWidget {
     this.borderRadius = 12,
     this.textStyle,
     this.child,
-    this.hoverColor
+    this.hoverColor,
   });
 
   @override

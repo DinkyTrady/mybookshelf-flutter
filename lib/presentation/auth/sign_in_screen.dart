@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:web_flut/components/custom_button.dart';
-import 'package:web_flut/components/text_form_field.dart';
+import 'package:web_flut/components/custom_text_form_field.dart';
 import 'package:web_flut/presentation/auth/sign_up_screen.dart';
+import 'package:web_flut/presentation/home/home_screen.dart';
 import 'package:web_flut/services/auth_service.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen>
     with SingleTickerProviderStateMixin {
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _obscureText = true;
@@ -51,18 +52,19 @@ class _SignInScreenState extends State<SignInScreen>
     setState(() {
       _isLoading = true;
     });
-    final user = await _authService.login(
-      _usernameController.text,
-      _passwordController.text,
-    );
-    if (mounted) {
+    try {
+      final user = await _authService.signIn(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
       if (user != null) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (BuildContext context) => const SignInScreen(),
+            builder: (BuildContext context) => const HomeScreen(),
           ),
         );
       } else {
@@ -70,6 +72,13 @@ class _SignInScreenState extends State<SignInScreen>
           const SnackBar(content: Text('Invalid username or password')),
         );
       }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
     }
   }
 
@@ -80,7 +89,7 @@ class _SignInScreenState extends State<SignInScreen>
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [theme.colorScheme.surface, theme.colorScheme.background],
+            colors: [theme.colorScheme.surface, theme.colorScheme.surface],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -112,20 +121,20 @@ class _SignInScreenState extends State<SignInScreen>
                       Text(
                         'Login to your account',
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          color: theme.colorScheme.onSurface.withAlpha(178),
                         ),
                       ),
                       const SizedBox(height: 32),
-                      CustomTextField(
-                        controller: _usernameController,
-                        label: 'email',
-                        icon: Icons.person_outline,
+                      CustomTextFormField(
+                        controller: _emailController,
+                        labelText: 'email',
+                        prefixIcon: Icons.person_outline,
                       ),
                       const SizedBox(height: 16),
-                      CustomTextField(
+                      CustomTextFormField(
                         controller: _passwordController,
-                        label: 'Password',
-                        icon: Icons.lock_outline,
+                        labelText: 'Password',
+                        prefixIcon: Icons.lock_outline,
                         obscureText: _obscureText,
                         suffixIcon: IconButton(
                           onPressed: () {
@@ -151,7 +160,6 @@ class _SignInScreenState extends State<SignInScreen>
                         height: 50,
                         isLoading: _isLoading,
                       ),
-                      // _buildLoginButton(theme),
                       const SizedBox(height: 16),
                       CustomButton(
                         onTap: () {
@@ -186,33 +194,6 @@ class _SignInScreenState extends State<SignInScreen>
                           fontWeight: FontWeight.normal,
                         ),
                       ),
-                      // TextButton(
-                      //   onPressed: () {
-                      //     Navigator.of(context).push(
-                      //       PageRouteBuilder(
-                      //         pageBuilder:
-                      //             (context, animation, secondaryAnimation) =>
-                      //                 const SignUpScreen(),
-                      //         transitionsBuilder:
-                      //             (
-                      //               context,
-                      //               animation,
-                      //               secondaryAnimation,
-                      //               child,
-                      //             ) {
-                      //               return FadeTransition(
-                      //                 opacity: animation,
-                      //                 child: child,
-                      //               );
-                      //             },
-                      //       ),
-                      //     );
-                      //   },
-                      //   style: TextButton.styleFrom(
-                      //     foregroundColor: theme.colorScheme.secondary,
-                      //   ),
-                      //   child: const Text('Don\'t have an account? Register'),
-                      // ),
                     ],
                   ),
                 ),

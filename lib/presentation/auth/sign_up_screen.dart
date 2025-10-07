@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:web_flut/components/custom_button.dart';
-import 'package:web_flut/components/text_form_field.dart';
+import 'package:web_flut/components/custom_text_form_field.dart';
+import 'package:web_flut/presentation/auth/sign_in_screen.dart';
 import 'package:web_flut/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -12,7 +13,8 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen>
     with SingleTickerProviderStateMixin<SignUpScreen> {
-  final _usernameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -52,31 +54,49 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   void _register() async {
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: const Text('Password do not match')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Password do not match')));
       return;
     }
     setState(() {
       _isLoading = true;
     });
-    final success = await _authService.register(
-      _usernameController.text,
-      _emailController.text,
-      _passwordController.text,
-    );
+    try {
+      final success = await _authService.signUp(
+        _firstNameController.text,
+        _lastNameController.text,
+        _emailController.text,
+        _passwordController.text,
+      );
 
-    if (mounted) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
       if (success) {
-        Navigator.of(context).pop();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (BuildContext context) => const SignInScreen(),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful! Please sign in.'),
+          ),
+        );
       } else {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('email already exist')));
       }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
     }
   }
 
@@ -126,22 +146,28 @@ class _SignUpScreenState extends State<SignUpScreen>
                         style: theme.textTheme.titleMedium,
                       ),
                       const SizedBox(height: 32),
-                      CustomTextField(
-                        controller: _usernameController,
-                        label: 'Username',
-                        icon: Icons.person_outline,
+                      CustomTextFormField(
+                        controller: _firstNameController,
+                        labelText: 'Firstname',
+                        prefixIcon: Icons.person_outline,
                       ),
                       const SizedBox(height: 16),
-                      CustomTextField(
+                      CustomTextFormField(
+                        controller: _lastNameController,
+                        labelText: 'Lastname',
+                        prefixIcon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+                      CustomTextFormField(
                         controller: _emailController,
-                        label: 'Email',
-                        icon: Icons.email,
+                        labelText: 'Email',
+                        prefixIcon: Icons.email,
                       ),
                       const SizedBox(height: 16),
-                      CustomTextField(
+                      CustomTextFormField(
                         controller: _passwordController,
-                        label: 'Password',
-                        icon: Icons.lock_outline,
+                        labelText: 'Password',
+                        prefixIcon: Icons.lock_outline,
                         obscureText: _obscurePassword,
                         suffixIcon: IconButton(
                           onPressed: () {
@@ -158,10 +184,10 @@ class _SignUpScreenState extends State<SignUpScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      CustomTextField(
+                      CustomTextFormField(
                         controller: _confirmPasswordController,
-                        label: 'Confirm Password',
-                        icon: Icons.lock_outline,
+                        labelText: 'Confirm Password',
+                        prefixIcon: Icons.lock_outline,
                         obscureText: _obscurePassword,
                         suffixIcon: IconButton(
                           onPressed: () {
@@ -184,10 +210,10 @@ class _SignUpScreenState extends State<SignUpScreen>
                         text: 'Register',
                         gradientColors: [
                           theme.colorScheme.primary,
-                          theme.colorScheme.secondary
+                          theme.colorScheme.secondary,
                         ],
                         isLoading: _isLoading,
-                      )
+                      ),
                     ],
                   ),
                 ),

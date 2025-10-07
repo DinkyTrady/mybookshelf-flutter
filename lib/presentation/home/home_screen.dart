@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:web_flut/models/book.dart';
-import 'package:web_flut/models/comic.dart';
-import 'package:web_flut/presentation/auth/login_screen.dart';
+import 'package:web_flut/presentation/auth/sign_in_screen.dart';
+import 'package:web_flut/presentation/bookshelf/book_form.dart';
 import 'package:web_flut/presentation/bookshelf/library_item_card.dart';
-import 'package:web_flut/presentation/bookshelf/library_item_form.dart';
 import 'package:web_flut/presentation/home/home_view_model.dart';
 
 /// The main home screen of the application
@@ -37,13 +35,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Show dialog to add a new item
-  void _showAddItemDialog({required bool isKomik}) async {
-    final formKey = GlobalKey<LibraryItemFormState>();
+  void _showAddItemDialog({required BookType bookType}) async {
+    final formKey = GlobalKey<BookFormState>();
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add ${isKomik ? 'Komik' : 'Book'}'),
+          title: Text('Add ${bookType.name}'),
           content: Container(
             width: MediaQuery.of(context).size.width * 0.8,
             constraints: BoxConstraints(
@@ -51,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
               maxHeight: MediaQuery.of(context).size.height * 0.8,
             ),
             child: SingleChildScrollView(
-              child: LibraryItemForm(key: formKey, isKomik: isKomik),
+              child: BookForm(key: formKey, bookType: bookType),
             ),
           ),
           actions: <Widget>[
@@ -64,8 +62,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 final newItem = formKey.currentState?.saveAndGetItem();
                 if (newItem != null) {
-                  await _viewModel.addItem(newItem);
-                  Navigator.of(context).pop();
+                  final navigator = Navigator.of(context);
+                  await _viewModel.addItems(newItem);
+                  navigator.pop();
                 }
               },
             ),
@@ -77,61 +76,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Show dialog to choose the type of item to add
   Future<void> _showItemTypeDialog() async {
-    final type = await showDialog<String>(
+    final type = await showDialog<BookType>(
       context: context,
       builder: (context) => SimpleDialog(
         title: const Text('Choose Item Type'),
         children: [
           SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'book'),
-            child: const Text('Book'),
+            onPressed: () => Navigator.pop(context, BookType.novel),
+            child: const Text('Novel'),
           ),
           SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'komik'),
-            child: const Text('Komik'),
+            onPressed: () => Navigator.pop(context, BookType.lightNovel),
+            child: const Text('Light Novel'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookType.comic),
+            child: const Text('Comic'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookType.manga),
+            child: const Text('Manga'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookType.manhwa),
+            child: const Text('Manhwa'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookType.manhua),
+            child: const Text('Manhua'),
           ),
         ],
       ),
     );
 
-    if (type == 'book') {
-      _showAddItemDialog(isKomik: false);
-    } else if (type == 'komik') {
-      _showAddItemDialog(isKomik: true);
+    if (type != null) {
+      _showAddItemDialog(bookType: type);
     }
-  }
-
-  /// Show dialog to choose the sort option
-  void _showSortDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Sort by'),
-        children: <Widget>[
-          SimpleDialogOption(
-            onPressed: () {
-              _viewModel.updateSortOption(SortOption.byTitle);
-              Navigator.pop(context);
-            },
-            child: const Text('Title'),
-          ),
-          SimpleDialogOption(
-            onPressed: () {
-              _viewModel.updateSortOption(SortOption.byAuthor);
-              Navigator.pop(context);
-            },
-            child: const Text('Author'),
-          ),
-          SimpleDialogOption(
-            onPressed: () {
-              _viewModel.updateSortOption(SortOption.byDate);
-              Navigator.pop(context);
-            },
-            child: const Text('Recently Added'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -162,12 +142,21 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Build the app bar section
   Widget _buildAppBar(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 16.0),
+      padding: const EdgeInsets.only(
+        left: 24.0,
+        right: 24.0,
+        top: 24.0,
+        bottom: 16.0,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('My Bookshelf',
-              style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'My Bookshelf',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _navigateToLogin,
@@ -181,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToLogin() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (BuildContext context) => const LoginScreen(),
+        builder: (BuildContext context) => const SignInScreen(),
       ),
     );
   }
@@ -205,14 +194,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderSide: BorderSide.none,
                 ),
                 suffixIcon: _viewModel.searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        _viewModel.updateSearchQuery('');
-                      },
-                    )
-                  : null,
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _viewModel.updateSearchQuery('');
+                        },
+                      )
+                    : null,
               ),
             ),
           ),
@@ -257,32 +246,98 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 PopupMenuItem(
-                  value: 'filter_books',
+                  value: 'filter_novels',
                   child: Row(
                     children: [
                       Icon(
                         Icons.check,
-                        color: _viewModel.itemTypeFilter == ItemTypeFilter.booksOnly
+                        color:
+                            _viewModel.itemTypeFilter == ItemTypeFilter.novels
                             ? theme.colorScheme.primary
                             : Colors.transparent,
                       ),
                       const SizedBox(width: 8),
-                      const Text('Books Only'),
+                      const Text('Novels Only'),
                     ],
                   ),
                 ),
                 PopupMenuItem(
-                  value: 'filter_komiks',
+                  value: 'filter_light_novels',
                   child: Row(
                     children: [
                       Icon(
                         Icons.check,
-                        color: _viewModel.itemTypeFilter == ItemTypeFilter.komiksOnly
+                        color:
+                            _viewModel.itemTypeFilter ==
+                                ItemTypeFilter.lightNovels
                             ? theme.colorScheme.primary
                             : Colors.transparent,
                       ),
                       const SizedBox(width: 8),
-                      const Text('Komiks Only'),
+                      const Text('Light Novels Only'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'filter_comics',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check,
+                        color:
+                            _viewModel.itemTypeFilter == ItemTypeFilter.comics
+                            ? theme.colorScheme.primary
+                            : Colors.transparent,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Comics Only'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'filter_manga',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check,
+                        color: _viewModel.itemTypeFilter == ItemTypeFilter.manga
+                            ? theme.colorScheme.primary
+                            : Colors.transparent,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Manga Only'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'filter_manhwa',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check,
+                        color:
+                            _viewModel.itemTypeFilter == ItemTypeFilter.manhwa
+                            ? theme.colorScheme.primary
+                            : Colors.transparent,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Manhwa Only'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'filter_manhua',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check,
+                        color:
+                            _viewModel.itemTypeFilter == ItemTypeFilter.manhua
+                            ? theme.colorScheme.primary
+                            : Colors.transparent,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Manhua Only'),
                     ],
                   ),
                 ),
@@ -351,10 +406,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Handle filter selection
                 if (value == 'filter_all') {
                   _viewModel.updateItemTypeFilter(ItemTypeFilter.all);
-                } else if (value == 'filter_books') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.booksOnly);
-                } else if (value == 'filter_komiks') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.komiksOnly);
+                } else if (value == 'filter_novels') {
+                  _viewModel.updateItemTypeFilter(ItemTypeFilter.novels);
+                } else if (value == 'filter_light_novels') {
+                  _viewModel.updateItemTypeFilter(ItemTypeFilter.lightNovels);
+                } else if (value == 'filter_comics') {
+                  _viewModel.updateItemTypeFilter(ItemTypeFilter.comics);
+                } else if (value == 'filter_manga') {
+                  _viewModel.updateItemTypeFilter(ItemTypeFilter.manga);
+                } else if (value == 'filter_manhwa') {
+                  _viewModel.updateItemTypeFilter(ItemTypeFilter.manhwa);
+                } else if (value == 'filter_manhua') {
+                  _viewModel.updateItemTypeFilter(ItemTypeFilter.manhua);
                 }
                 // Handle sort selection
                 else if (value == 'sort_title') {
@@ -378,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -407,26 +470,26 @@ class _HomeScreenState extends State<HomeScreen> {
               // Currently Reading section
               if (unreadItems.isNotEmpty) ...[
                 _buildSectionHeader('Currently Reading'),
-                ...unreadItems.map((item) =>
-                  LibraryItemCard(
+                ...unreadItems.map(
+                  (item) => LibraryItemCard(
                     key: ValueKey(item.id),
                     item: item,
-                    onItemChanged: () => _viewModel.loadItems(),
-                  )
+                    viewModel: _viewModel,
+                  ),
                 ),
               ],
 
               // Completed section
               if (readItems.isNotEmpty) ...[
                 _buildSectionHeader('Completed'),
-                ...readItems.map((item) =>
-                  LibraryItemCard(
+                ...readItems.map(
+                  (item) => LibraryItemCard(
                     key: ValueKey(item.id),
                     item: item,
-                    onItemChanged: () => _viewModel.loadItems(),
-                  )
+                    viewModel: _viewModel,
+                  ),
                 ),
-              ]
+              ],
             ],
           );
         },

@@ -1,7 +1,8 @@
-import 'package:web_flut/models/library_item.dart';
+import 'package:web_flut/models/books/base_book.dart'; // Changed import
 
 /// Base service interface for all library item services
-abstract class LibraryItemService<T extends LibraryItem> {
+abstract class LibraryItemService<T extends BaseBook> {
+  // Changed generic type
   /// Get all items
   Future<List<T>> getItems();
 

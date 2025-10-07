@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "id": "22b8313f-0484-4b4f-ac09-4c3cb3774f84",
+      "createdAt": "2025-09-29T18:24:36.571157",
+      "updatedAt": null,
+      "firstName": "Test",
+      "lastName": null,
+      "biography": "",
+      "email": "test@example.com",
+      "password": "password123",
+      "role": "Roles.normal"
+    }
+  ]
+}
