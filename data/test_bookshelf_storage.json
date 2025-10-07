@@ -1,0 +1,137 @@
+{
+  "libraryItems": [
+    {
+      "id": "b819ee99-ed34-4363-b268-bb7051327773",
+      "createdAt": "2025-09-29T18:24:41.256997",
+      "updatedAt": "2025-09-27T18:24:41.256972",
+      "title": "The Hobbit",
+      "author": {
+        "id": "319b9ae2-44b0-4bb9-9858-5d8547b8d348",
+        "createdAt": "2025-09-29T18:24:41.256971",
+        "updatedAt": null,
+        "firstName": "J.R.R.",
+        "lastName": "Tolkien",
+        "biography": "Fantasy author",
+        "dateOfBirth": "1892-01-03T00:00:00.000",
+        "dateOfDeath": null
+      },
+      "summary": "A fantasy novel by J.R.R. Tolkien.",
+      "coverImageUrl": "https://covers.openlibrary.org/b/id/8264489-L.jpg",
+      "isReading": true,
+      "isFinished": false,
+      "pageCount": 310,
+      "currentPage": 120,
+      "type": "Novel",
+      "genres": [
+        { "id": "f2488bf0-2d1c-4eaf-bc18-f4bf5721aceb", "name": "Fantasy" }
+      ],
+      "chapters": null,
+      "currentChapter": null,
+      "status": null,
+      "language": {
+        "id": "19d00b15-76f7-4025-a4a8-606718e6a755",
+        "name": "English",
+        "code": "en"
+      }
+    },
+    {
+      "id": "dcad678d-cc0a-407e-badd-59bb969bb401",
+      "createdAt": "2025-09-29T18:24:41.257041",
+      "updatedAt": "2025-09-24T18:24:41.257030",
+      "title": "One Piece",
+      "author": {
+        "id": "0f6744b7-4321-4899-be39-a98625485941",
+        "createdAt": "2025-09-29T18:24:41.257014",
+        "updatedAt": null,
+        "firstName": "Eiichiro",
+        "lastName": "Oda",
+        "biography": "Manga artist",
+        "dateOfBirth": "1975-01-01T00:00:00.000",
+        "dateOfDeath": null
+      },
+      "summary": "A legendary pirate adventure following Luffy and his crew.",
+      "coverImageUrl": "https://static.wikia.nocookie.net/onepiece/images/6/6e/One_Piece_Manga_Volume_1.jpg",
+      "isReading": true,
+      "isFinished": false,
+      "pageCount": null,
+      "currentPage": null,
+      "type": "Comic",
+      "genres": [
+        { "id": "e78f8aa8-4852-44e9-9026-702b85afc841", "name": "Adventure" },
+        { "id": "e8e3e4f0-3fb0-474a-9bdd-41b1b82eb8b1", "name": "Fantasy" }
+      ],
+      "chapters": 1090,
+      "currentChapter": 1090,
+      "status": "Ongoing",
+      "language": {
+        "id": "c075813c-c4e6-4891-a69f-bef6baed0b2e",
+        "name": "Japanese",
+        "code": "ja"
+      }
+    },
+    {
+      "id": "32ada5b0-c1cf-42a0-8c38-688ced332119",
+      "createdAt": "2025-09-29T18:24:41.256806",
+      "updatedAt": null,
+      "title": "Filter Novel",
+      "author": {
+        "id": "0efb0fd6-4d4f-4fdf-9d08-944764050e1a",
+        "createdAt": "2025-09-29T18:24:41.256793",
+        "updatedAt": null,
+        "firstName": "Test",
+        "lastName": "Author",
+        "biography": "Test bio",
+        "dateOfBirth": "2000-01-01T00:00:00.000",
+        "dateOfDeath": null
+      },
+      "summary": "Test summary",
+      "coverImageUrl": "test.jpg",
+      "isReading": false,
+      "isFinished": false,
+      "pageCount": 100,
+      "currentPage": null,
+      "type": "Novel",
+      "genres": null,
+      "chapters": null,
+      "currentChapter": null,
+      "status": null,
+      "language": {
+        "id": "bc7e2b9a-f455-464a-afad-5c46b7c63f25",
+        "name": "English",
+        "code": "en"
+      }
+    },
+    {
+      "id": "11ee3f23-60e6-43d2-8584-e9924a3216b2",
+      "createdAt": "2025-09-29T18:24:41.256835",
+      "updatedAt": null,
+      "title": "Filter Comic",
+      "author": {
+        "id": "b44e2f26-d341-4fb9-b861-de18e5278c0d",
+        "createdAt": "2025-09-29T18:24:41.256825",
+        "updatedAt": null,
+        "firstName": "Comic",
+        "lastName": "Author",
+        "biography": "Comic bio",
+        "dateOfBirth": "1990-01-01T00:00:00.000",
+        "dateOfDeath": null
+      },
+      "summary": "Comic summary",
+      "coverImageUrl": "comic.jpg",
+      "isReading": false,
+      "isFinished": false,
+      "pageCount": null,
+      "currentPage": null,
+      "type": "Comic",
+      "genres": null,
+      "chapters": 50,
+      "currentChapter": null,
+      "status": "Ongoing",
+      "language": {
+        "id": "b096934f-f595-4b84-98f8-b6393b0447bd",
+        "name": "Japanese",
+        "code": "ja"
+      }
+    }
+  ]
+}
