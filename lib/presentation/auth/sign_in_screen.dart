@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:web_flut/components/custom_button.dart';
 import 'package:web_flut/components/custom_text_form_field.dart';
+import 'package:web_flut/utils/toast_util.dart';
 import 'package:web_flut/presentation/auth/sign_up_screen.dart';
 import 'package:web_flut/presentation/home/home_screen.dart';
 import 'package:web_flut/services/auth_service.dart';
@@ -53,7 +54,7 @@ class _SignInScreenState extends State<SignInScreen>
       _isLoading = true;
     });
     try {
-      final user = await _authService.signIn(
+      final result = await _authService.signIn(
         _emailController.text,
         _passwordController.text,
       );
@@ -61,24 +62,21 @@ class _SignInScreenState extends State<SignInScreen>
       setState(() {
         _isLoading = false;
       });
-      if (user != null) {
+      if (result.success) {
+        ToastUtil.showToast(context, result.message, success: true);
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (BuildContext context) => const HomeScreen(),
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid username or password')),
-        );
+        ToastUtil.showToast(context, result.message, success: false);
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+      ToastUtil.showToast(context, 'Login failed: $e', success: false);
     }
   }
 

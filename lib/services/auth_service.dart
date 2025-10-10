@@ -2,11 +2,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:web_flut/models/users/user_account.dart';
 
+class AuthResult {
+  final bool success;
+  final String message;
+  final UserAccount? user;
+
+  AuthResult({
+    required this.success,
+    required this.message,
+    this.user,
+  });
+}
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _fireStore = FirebaseFirestore.instance;
 
-  Future<UserAccount?> signIn(String email, String password) async {
+  Future<AuthResult> signIn(String email, String password) async {
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -19,16 +31,45 @@ class AuthService {
           .get();
 
       if (userDoc.exists) {
-        return UserAccount.fromMap(userDoc.data() as Map<String, dynamic>);
+        return AuthResult(
+          success: true,
+          message: 'Successfully signed in',
+          user: UserAccount.fromMap(userDoc.data() as Map<String, dynamic>),
+        );
       }
-      return null;
+      return AuthResult(
+        success: false,
+        message: 'User account not found',
+      );
     } catch (e) {
-      print('Error ocured: $e'); // logging some error
-      return null;
+      print('Error occurred: $e'); // logging some error
+      String errorMessage = 'Authentication failed';
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = 'No user found with this email';
+            break;
+          case 'wrong-password':
+            errorMessage = 'Invalid password';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Email address is not valid';
+            break;
+          case 'user-disabled':
+            errorMessage = 'This user account has been disabled';
+            break;
+        }
+      }
+      
+      return AuthResult(
+        success: false,
+        message: errorMessage,
+      );
     }
   }
 
-  Future<bool> signUp(
+  Future<AuthResult> signUp(
     String firstName,
     String lastName,
     String email,
@@ -39,7 +80,10 @@ class AuthService {
           .createUserWithEmailAndPassword(email: email, password: password);
       final uid = userCredential.user?.uid;
       if (uid == null) {
-        return false;
+        return AuthResult(
+          success: false,
+          message: 'Failed to create user account',
+        );
       }
 
       final userAccount = UserAccount(
@@ -57,10 +101,40 @@ class AuthService {
           .catchError((e) {
             print('Firestore write error: $e');
           });
-      return true;
+      return AuthResult(
+        success: true,
+        message: 'Account created successfully',
+        user: userAccount,
+      );
     } catch (e) {
-      print('register error: $e'); // logging some error
-      return false;
+      print('Registration error: $e'); // logging some error
+      String errorMessage = 'Registration failed';
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'email-already-in-use':
+            errorMessage = 'Email is already in use';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Email address is not valid';
+            break;
+          case 'weak-password':
+            errorMessage = 'Password is too weak';
+            break;
+          case 'operation-not-allowed':
+            errorMessage = 'Account creation is not enabled';
+            break;
+        }
+      }
+      
+      return AuthResult(
+        success: false,
+        message: errorMessage,
+      );
     }
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
   }
 }

@@ -69,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 10),
-                LoadingAnimationWidget.twistingDots(leftDotColor: Colors.purple, rightDotColor: Colors.lightBlue, size: 20),
+                LoadingAnimationWidget.twistingDots(leftDotColor: theme.colorScheme.primary, rightDotColor: theme.colorScheme.secondary, size: 40),
                 const SizedBox(height: 10),
                 Text(
                   'Developed by Randy Dinky Saputra',

@@ -3,6 +3,8 @@ import 'package:web_flut/presentation/auth/sign_in_screen.dart';
 import 'package:web_flut/presentation/bookshelf/book_form.dart';
 import 'package:web_flut/presentation/bookshelf/library_item_card.dart';
 import 'package:web_flut/presentation/home/home_view_model.dart';
+import 'package:web_flut/services/auth_service.dart';
+import 'package:web_flut/utils/toast_util.dart';
 
 /// The main home screen of the application
 class HomeScreen extends StatefulWidget {
@@ -167,7 +169,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Navigate to the login screen
-  void _navigateToLogin() {
+  void _navigateToLogin() async {
+    await AuthService().signOut();
+    ToastUtil.showToast(context, 'Successfully logged out', success: true);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (BuildContext context) => const SignInScreen(),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:web_flut/components/custom_button.dart';
 import 'package:web_flut/components/custom_text_form_field.dart';
+import 'package:web_flut/utils/toast_util.dart';
 import 'package:web_flut/presentation/auth/sign_in_screen.dart';
 import 'package:web_flut/services/auth_service.dart';
 
@@ -54,16 +55,14 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   void _register() async {
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Password do not match')));
+      ToastUtil.showToast(context, 'Passwords do not match', success: false);
       return;
     }
     setState(() {
       _isLoading = true;
     });
     try {
-      final success = await _authService.signUp(
+      final result = await _authService.signUp(
         _firstNameController.text,
         _lastNameController.text,
         _emailController.text,
@@ -74,29 +73,21 @@ class _SignUpScreenState extends State<SignUpScreen>
       setState(() {
         _isLoading = false;
       });
-      if (success) {
+      if (result.success) {
+        ToastUtil.showToast(context, result.message, success: true);
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (BuildContext context) => const SignInScreen(),
           ),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration successful! Please sign in.'),
-          ),
-        );
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('email already exist')));
+        ToastUtil.showToast(context, result.message, success: false);
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+      ToastUtil.showToast(context, 'Registration failed: $e', success: false);
     }
   }
 
