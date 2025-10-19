@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:web_flut/models/books/base_book.dart';
+import 'package:web_flut/models/books/book_type.dart';
 import 'package:web_flut/models/books/comic.dart';
-import 'package:web_flut/models/books/light_novel.dart';
+
 import 'package:web_flut/models/books/novel.dart';
 import 'package:web_flut/presentation/bookshelf/book_form.dart';
 import 'package:web_flut/services/bookshelf_service.dart';
@@ -28,9 +29,12 @@ class _LibraryItemDetailsScreenState extends State<LibraryItemDetailsScreen> {
   Future<void> _showEditFormDialog() async {
     BookType bookType;
     if (widget.item is Novel) {
-      bookType = BookType.novel;
-    } else if (widget.item is LightNovel) {
-      bookType = BookType.lightNovel;
+      final novel = widget.item as Novel;
+      if (novel.type == BookType.lightNovel) {
+        bookType = BookType.lightNovel;
+      } else {
+        bookType = BookType.novel;
+      }
     } else if (widget.item is Comic) {
       bookType = BookType.comic;
     } else {
@@ -228,6 +232,7 @@ class _LibraryItemDetailsScreenState extends State<LibraryItemDetailsScreen> {
                           const SizedBox(height: 16),
                           Text(
                             widget.item.summary,
+                            textAlign: TextAlign.justify,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               height: 1.5,
                             ),
@@ -259,6 +264,8 @@ class _LibraryItemDetailsScreenState extends State<LibraryItemDetailsScreen> {
             children: [
               _buildInfoItem(theme, 'Author', novel.author.fullName),
               const SizedBox(height: 16),
+              _buildInfoItem(theme, 'Type', novel.type.toString().split('.').last),
+              const SizedBox(height: 16),
               _buildInfoItem(theme, 'Status', novel.getStatusText()),
               const SizedBox(height: 16),
               _buildInfoItem(theme, 'Language', novel.language?.name ?? 'N/A'),
@@ -278,42 +285,7 @@ class _LibraryItemDetailsScreenState extends State<LibraryItemDetailsScreen> {
           ),
         ),
       );
-    } else if (widget.item is LightNovel) {
-      final lightNovel = widget.item as LightNovel;
-      return Card(
-        elevation: 0,
-        color: theme.colorScheme.surface.withAlpha(127),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoItem(theme, 'Author', lightNovel.author.fullName),
-              const SizedBox(height: 16),
-              _buildInfoItem(theme, 'Status', lightNovel.getStatusText()),
-              const SizedBox(height: 16),
-              _buildInfoItem(
-                theme,
-                'Language',
-                lightNovel.language?.name ?? 'N/A',
-              ),
-              const SizedBox(height: 16),
-              _buildInfoItem(
-                theme,
-                'Pages',
-                '${lightNovel.currentPage?.toString() ?? 'N/A'} of ${lightNovel.pageCount?.toString() ?? 'N/A'}',
-              ),
-              const SizedBox(height: 16),
-              _buildInfoItem(
-                theme,
-                'Genres',
-                lightNovel.genres?.map((g) => g.name).join(', ') ?? 'N/A',
-              ),
-            ],
-          ),
-        ),
-      );
+
     } else if (widget.item is Comic) {
       final comic = widget.item as Comic;
       final genreNames = comic.genres?.map((g) => g.name).join(', ') ?? 'N/A';
@@ -335,12 +307,10 @@ class _LibraryItemDetailsScreenState extends State<LibraryItemDetailsScreen> {
               _buildInfoItem(
                 theme,
                 'Type',
-                comic.type?.toString().split('.').last ?? 'N/A',
+                comic.type.toString().split('.').last,
               ),
               const SizedBox(height: 16),
               _buildInfoItem(theme, 'Genres', genreNames),
-              const SizedBox(height: 16),
-              _buildInfoItem(theme, 'Details', comic.getDetails()),
             ],
           ),
         ),

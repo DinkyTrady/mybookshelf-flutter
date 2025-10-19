@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:web_flut/models/books/base_book.dart';
+import 'package:web_flut/models/books/book_type.dart';
 import 'package:web_flut/models/books/comic.dart';
-import 'package:web_flut/models/books/light_novel.dart';
+
 
 import 'package:web_flut/models/books/novel.dart';
 import 'package:web_flut/presentation/home/home_view_model.dart';
@@ -48,12 +49,14 @@ class LibraryItemCard extends StatelessWidget {
   /// Builds the leading image for the card
   Widget _buildLeadingImage() {
     return SizedBox(
-      width: 50,
+      width: 80,
+      height: 140,
       child: Image.network(
         item.coverImageUrl,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
+        height: 140,
         errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.image_not_supported, size: 50);
+          return const Icon(Icons.image_not_supported, size: 80);
         },
       ),
     );
@@ -67,20 +70,19 @@ class LibraryItemCard extends StatelessWidget {
 
     if (item is Novel) {
       final novel = item as Novel;
-      subtitleText = '${novel.author.fullName} • ${novel.pageCount} pages';
+      final genreNames = novel.genres?.map((g) => g.name).join(', ') ?? 'N/A';
+      subtitleText =
+          '${novel.author.fullName} • $genreNames • ${novel.pageCount} pages';
       progressValue = novel.progressPercentage;
       showProgress = novel.isReading && !novel.isFinished;
-    } else if (item is LightNovel) {
-      final lightNovel = item as LightNovel;
-      subtitleText =
-          '${lightNovel.author.fullName} • ${lightNovel.pageCount} pages';
-      progressValue = lightNovel.progressPercentage;
-      showProgress = lightNovel.isReading && !lightNovel.isFinished;
+
     } else if (item is Comic) {
       final comic = item as Comic;
+      final chapter =
+          comic.chapters != null ? '${comic.chapters} Chapters' : 'Ongoing';
       final genreNames = comic.genres?.map((g) => g.name).join(', ') ?? 'N/A';
       subtitleText =
-          '${comic.type} • $genreNames • ${comic.author.fullName} • ${comic.chapters} chapters';
+          '${comic.author.fullName} • $genreNames • $chapter';
       progressValue = comic.progressPercentage;
       showProgress = comic.isReading && !comic.isFinished;
     }
@@ -136,8 +138,7 @@ class LibraryItemCard extends StatelessWidget {
     BookType bookType;
     if (item is Novel) {
       bookType = BookType.novel;
-    } else if (item is LightNovel) {
-      bookType = BookType.lightNovel;
+
     } else if (item is Comic) {
       bookType = BookType.comic;
     } else {

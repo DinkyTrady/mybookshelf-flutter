@@ -2,7 +2,7 @@ import 'package:web_flut/models/base.dart';
 import 'package:web_flut/models/users/author.dart';
 import 'package:web_flut/models/genre.dart';
 import 'package:web_flut/models/language.dart'; // Import Language model
-import 'package:web_flut/models/books/comic_type.dart';
+
 
 abstract class BaseBook extends Base {
   final String _title;
@@ -17,7 +17,7 @@ abstract class BaseBook extends Base {
   final int? _currentPage;
 
   // Comic-specific properties
-  final ComicType? _type; // manga, manhwa, manhua
+
   final List<Genre>? _genres; // Changed to List<Genre>
   final int? _chapters;
   final int? _currentChapter;
@@ -38,7 +38,6 @@ abstract class BaseBook extends Base {
     int? pageCount,
     int? currentPage,
     // Comic-specific
-    ComicType? type,
     List<Genre>? genres, // Changed to List<Genre>
     int? chapters,
     int? currentChapter,
@@ -53,7 +52,6 @@ abstract class BaseBook extends Base {
        _isFinished = isFinished,
        _pageCount = pageCount,
        _currentPage = currentPage,
-       _type = type,
        _genres = genres, // Changed to _genres
        _chapters = chapters,
        _currentChapter = currentChapter,
@@ -71,7 +69,7 @@ abstract class BaseBook extends Base {
   int? get pageCount => _pageCount;
   int? get currentPage => _currentPage;
 
-  ComicType? get type => _type;
+
   List<Genre>? get genres => _genres; // Changed to genres
   int? get chapters => _chapters;
   int? get currentChapter => _currentChapter;
@@ -118,7 +116,6 @@ abstract class BaseBook extends Base {
       'isFinished': _isFinished,
       'pageCount': _pageCount,
       'currentPage': _currentPage,
-      'type': _type?.toString().split('.').last,
       'genres': _genres
           ?.map((g) => g.toMap())
           .toList(), // Assuming Genre has toMap()

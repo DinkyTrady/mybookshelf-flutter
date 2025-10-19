@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:web_flut/models/books/base_book.dart';
 import 'package:web_flut/models/books/novel.dart';
-import 'package:web_flut/models/books/light_novel.dart';
+
 import 'package:web_flut/models/books/comic.dart';
 
 typedef BookFromMap = BaseBook Function(Map<String, dynamic>);
@@ -21,14 +21,13 @@ class BooksService {
   static final Map<String, BookFromMap> _bookFactories = {
     'novel': (map) => Novel.fromMap(map),
     'comic': (map) => Comic.fromMap(map),
-    'light_novel': (map) => LightNovel.fromMap(map),
   };
 
   Future<void> createBook(BaseBook book) async {
     await _booksRef.doc(book.id).set(book.toMap());
   }
 
-  Future<BaseBook?> getBook(String id, {required String type}) async {
+  Future<BaseBook?> getBook(String id, {required String bookType}) async {
     try {
       final doc = await _booksRef.doc(id).get();
       if (!doc.exists) return null;

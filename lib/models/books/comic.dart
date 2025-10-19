@@ -1,17 +1,18 @@
 import 'package:web_flut/models/books/base_book.dart';
+import 'package:web_flut/models/books/book_type.dart';
 import 'package:web_flut/models/users/author.dart';
 import 'package:web_flut/models/genre.dart';
 import 'package:web_flut/models/language.dart'; // Import Language
-import 'package:web_flut/models/books/comic_type.dart';
 
 class Comic extends BaseBook {
+  final BookType type;
   Comic({
     required super.id,
     required super.title,
     required super.author,
     required super.summary,
     required super.coverImageUrl,
-    required ComicType super.type,
+    required this.type,
     super.genres, // Changed to super.genres
     required super.chapters,
     super.currentChapter,
@@ -39,7 +40,7 @@ class Comic extends BaseBook {
     DateTime? updatedAt,
     int? pageCount,
     int? currentPage,
-    ComicType? type,
+    BookType? type,
     List<Genre>? genres, // Changed to List<Genre>
     int? chapters,
     int? currentChapter,
@@ -52,7 +53,7 @@ class Comic extends BaseBook {
       author: author ?? this.author,
       summary: summary ?? this.summary,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
-      type: type ?? this.type!,
+      type: type ?? this.type,
       genres: genres ?? this.genres, // Changed to genres
       chapters: chapters ?? this.chapters,
       currentChapter: currentChapter ?? this.currentChapter,
@@ -67,12 +68,12 @@ class Comic extends BaseBook {
   @override
   String getDetails() {
     final genreNames = genres?.map((g) => g.name).join(', ') ?? 'N/A';
-    String typeString = type?.toString().split('.').last ?? 'Comic';
-    if (type == ComicType.manga) {
+    String typeString = type.toString().split('.').last;
+    if (type == BookType.manga) {
       typeString = 'Manga (Japanese Comic)';
-    } else if (type == ComicType.manhwa) {
+    } else if (type == BookType.manhwa) {
       typeString = 'Manhwa (Korean Comic)';
-    } else if (type == ComicType.manhua) {
+    } else if (type == BookType.manhua) {
       typeString = 'Manhua (Chinese Comic)';
     }
     return '$typeString: $title by ${author.fullName}, Genres: $genreNames, ${chapters ?? 0} chapters, ${status ?? 'N/A'}';
@@ -97,9 +98,9 @@ class Comic extends BaseBook {
       author: Author.fromMap(map['author']), // Assuming Author has fromMap()
       summary: map['summary'],
       coverImageUrl: map['coverImageUrl'],
-      type: ComicType.values.firstWhere(
+      type: BookType.values.firstWhere(
         (e) => e.toString().split('.').last == map['type'],
-        orElse: () => ComicType.comic,
+        orElse: () => BookType.comic,
       ),
       genres: (map['genres'] as List<dynamic>?)
           ?.map((g) => Genre.fromMap(g))
@@ -121,7 +122,7 @@ class Comic extends BaseBook {
   @override
   Map<String, dynamic> toMap() {
     final baseMap = super.toMap();
-    // Comic-specific properties are already in BaseBook's toMap, so no need to add them again.
+    baseMap['type'] = type.toString().split('.').last;
     return baseMap;
   }
 }

@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:web_flut/data/default_data.dart';
 import 'package:web_flut/models/books/base_book.dart';
 import 'package:web_flut/models/books/comic.dart';
-import 'package:web_flut/models/books/comic_type.dart';
-import 'package:web_flut/models/books/light_novel.dart';
-import 'package:web_flut/data/default_data.dart';
+import 'package:web_flut/models/books/book_type.dart';
 
 import 'package:web_flut/models/books/novel.dart';
+import 'package:web_flut/models/genre.dart';
 
 /// Enum for sorting options
 enum SortOption { byTitle, byAuthor, byDate }
@@ -21,12 +21,14 @@ class HomeViewModel extends ChangeNotifier {
   String _searchQuery = '';
   SortOption _sortOption = SortOption.byDate;
   ItemTypeFilter _itemTypeFilter = ItemTypeFilter.all;
+  List<Genre> _genreFilter = [];
   bool _isLoading = false;
 
   List<BaseBook> get items => _items;
   String get searchQuery => _searchQuery;
   SortOption get sortOption => _sortOption;
   ItemTypeFilter get itemTypeFilter => _itemTypeFilter;
+  List<Genre> get genreFilter => _genreFilter;
   bool get isLoading => _isLoading;
 
   List<BaseBook> get unreadItems =>
@@ -73,6 +75,11 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  void updateGenreFilter(List<Genre> genres) {
+    _genreFilter = genres;
+    notifyListeners();
+  }
+
   Future<void> updateItem(BaseBook book) async {
     _setLoading(true);
     final index = _items.indexWhere((item) => item.id == book.id);
@@ -111,27 +118,33 @@ class HomeViewModel extends ChangeNotifier {
     // Type filter
     switch (_itemTypeFilter) {
       case ItemTypeFilter.novels:
-        result = result.whereType<Novel>().toList();
+        result = result
+            .where((item) => item is Novel && item.type == BookType.novel)
+            .toList();
         break;
       case ItemTypeFilter.lightNovels:
-        result = result.whereType<LightNovel>().toList();
+        result = result
+            .where((item) => item is Novel && item.type == BookType.lightNovel)
+            .toList();
         break;
       case ItemTypeFilter.comics:
-        result = result.whereType<Comic>().toList();
+        result = result
+            .where((item) => item is Comic && item.type == BookType.comic)
+            .toList();
         break;
       case ItemTypeFilter.manga:
         result = result
-            .where((item) => item is Comic && item.type == ComicType.manga)
+            .where((item) => item is Comic && item.type == BookType.manga)
             .toList();
         break;
       case ItemTypeFilter.manhwa:
         result = result
-            .where((item) => item is Comic && item.type == ComicType.manhwa)
+            .where((item) => item is Comic && item.type == BookType.manhwa)
             .toList();
         break;
       case ItemTypeFilter.manhua:
         result = result
-            .where((item) => item is Comic && item.type == ComicType.manhua)
+            .where((item) => item is Comic && item.type == BookType.manhua)
             .toList();
         break;
       case ItemTypeFilter.all:
@@ -146,16 +159,23 @@ class HomeViewModel extends ChangeNotifier {
         final authorMatch = item.author.fullName.toLowerCase().contains(query);
         final genreMatch =
             item.genres?.any((g) => g.name.toLowerCase().contains(query)) ??
-            false;
-        final typeMatch =
-            item.type
-                ?.toString()
-                .split('.')
-                .last
-                .toLowerCase()
-                .contains(query) ??
-            false;
+                false;
+        var typeMatch = false;
+        if (item is Novel) {
+          typeMatch = item.type.toString().split('.').last.toLowerCase().contains(query);
+        } else if (item is Comic) {
+          typeMatch = item.type.toString().split('.').last.toLowerCase().contains(query);
+        }
         return titleMatch || authorMatch || genreMatch || typeMatch;
+      }).toList();
+    }
+
+    // Genre filter
+    if (_genreFilter.isNotEmpty) {
+      result = result.where((item) {
+        if (item.genres == null || item.genres!.isEmpty) return false;
+        return _genreFilter.every((filterGenre) =>
+            item.genres!.any((bookGenre) => bookGenre.id == filterGenre.id));
       }).toList();
     }
 
@@ -166,8 +186,8 @@ class HomeViewModel extends ChangeNotifier {
           return a.title.toLowerCase().compareTo(b.title.toLowerCase());
         case SortOption.byAuthor:
           return a.author.fullName.toLowerCase().compareTo(
-            b.author.fullName.toLowerCase(),
-          );
+                b.author.fullName.toLowerCase(),
+              );
         case SortOption.byDate:
           return b.updatedAt?.compareTo(a.updatedAt ?? DateTime(0)) ?? 0;
       }

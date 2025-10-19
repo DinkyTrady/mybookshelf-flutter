@@ -43,8 +43,9 @@ dependencies:
   intl: ^0.20.2
 
   # Ui lib
-  loading_animation_widget: ^1.3.0
+  flutter_spinkit: ^5.2.2
   getwidget: ^7.0.0
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:

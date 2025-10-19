@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:web_flut/presentation/auth/sign_in_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -12,28 +13,13 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
+  final double _duration = 0.5;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 1),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
-    _controller.forward();
     Timer(
-      const Duration(seconds: 2),
+      const Duration(seconds: 3),
       () => Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (BuildContext context) => const SignInScreen(),
@@ -43,20 +29,10 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -69,16 +45,14 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 10),
-                LoadingAnimationWidget.twistingDots(leftDotColor: theme.colorScheme.primary, rightDotColor: theme.colorScheme.secondary, size: 40),
+                SpinKitThreeBounce(color: theme.colorScheme.primary, duration: Duration(milliseconds: 1000),),
                 const SizedBox(height: 10),
                 Text(
                   'Developed by Randy Dinky Saputra',
                   style: theme.textTheme.titleMedium,
                 ),
               ],
-            ),
-          ),
-        ),
+            ).animate().fadeIn(duration: _duration.seconds).scale(begin: Offset(0.5, 0.5), end: Offset(1.0, 1.0), duration: _duration.seconds),
       ),
     );
   }

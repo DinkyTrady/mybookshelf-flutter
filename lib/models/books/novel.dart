@@ -1,9 +1,12 @@
 import 'package:web_flut/models/books/base_book.dart';
+import 'package:web_flut/models/books/book_type.dart';
 import 'package:web_flut/models/users/author.dart';
 import 'package:web_flut/models/genre.dart'; // Import Genre
 import 'package:web_flut/models/language.dart'; // Import Language
 
 class Novel extends BaseBook {
+  final BookType type;
+
   Novel({
     required super.id,
     required super.title,
@@ -17,11 +20,13 @@ class Novel extends BaseBook {
     super.updatedAt,
     super.genres, // Added genres
     super.language, // Added language
+    this.type = BookType.novel,
   });
 
   @override
   String getDetails() {
-    return 'Novel: $title by ${author.fullName}, ${pageCount ?? 0} pages, Progress: ${(progressPercentage * 100).toStringAsFixed(1)}%';
+    final typeName = type == BookType.lightNovel ? 'Light Novel' : 'Novel';
+    return '$typeName: $title by ${author.fullName}, ${pageCount ?? 0} pages, Progress: ${(progressPercentage * 100).toStringAsFixed(1)}%';
   }
 
   @override
@@ -49,6 +54,7 @@ class Novel extends BaseBook {
     int? currentChapter,
     String? status,
     Language? language, // Added language
+    BookType? type,
   }) {
     return Novel(
       id: id ?? this.id,
@@ -63,6 +69,7 @@ class Novel extends BaseBook {
       updatedAt: updatedAt ?? this.updatedAt,
       genres: genres ?? this.genres, // Added genres
       language: language ?? this.language, // Added language
+      type: type ?? this.type,
     );
   }
 
@@ -86,13 +93,17 @@ class Novel extends BaseBook {
       language: map['language'] != null
           ? Language.fromMap(map['language'])
           : null, // Assuming Language has fromMap()
+      type: BookType.values.firstWhere(
+        (e) => e.toString() == map['type'],
+        orElse: () => BookType.novel,
+      ),
     );
   }
 
   @override
   Map<String, dynamic> toMap() {
     final baseMap = super.toMap();
-    // Novel-specific properties are already in BaseBook's toMap, so no need to add them again.
+    baseMap['type'] = type.toString();
     return baseMap;
   }
 }

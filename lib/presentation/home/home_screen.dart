@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:web_flut/data/default_data.dart';
+import 'package:web_flut/models/books/book_type.dart';
+import 'package:web_flut/models/genre.dart';
 import 'package:web_flut/presentation/auth/sign_in_screen.dart';
 import 'package:web_flut/presentation/bookshelf/book_form.dart';
 import 'package:web_flut/presentation/bookshelf/library_item_card.dart';
@@ -91,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.pop(context, BookType.lightNovel),
             child: const Text('Light Novel'),
           ),
+
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, BookType.comic),
             child: const Text('Comic'),
@@ -116,6 +120,64 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _showGenreFilterDialog() async {
+    final List<Genre>? result = await showDialog<List<Genre>>(
+      context: context,
+      builder: (BuildContext context) {
+        List<Genre> tempSelected = List.from(_viewModel.genreFilter);
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Filter by Genres'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: defaultGenres.map((genre) {
+                    final bool isSelected =
+                        tempSelected.any((g) => g.id == genre.id);
+                    return CheckboxListTile(
+                      title: Text(genre.name),
+                      value: isSelected,
+                      onChanged: (bool? value) {
+                        setDialogState(() {
+                          if (value == true) {
+                            if (!isSelected) {
+                              tempSelected.add(genre);
+                            }
+                          } else {
+                            tempSelected
+                                .removeWhere((g) => g.id == genre.id);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('Apply'),
+                  onPressed: () {
+                    Navigator.of(context).pop(tempSelected);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      _viewModel.updateGenreFilter(result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -131,6 +193,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Search and filters section
               _buildSearchAndFilters(theme),
+
+              _buildActiveFilters(theme),
 
               // Library items list
               _buildLibraryItemsList(),
@@ -171,11 +235,40 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Navigate to the login screen
   void _navigateToLogin() async {
     await AuthService().signOut();
+    if (!mounted) return;
     ToastUtil.showToast(context, 'Successfully logged out', success: true);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (BuildContext context) => const SignInScreen(),
       ),
+    );
+  }
+
+  Widget _buildActiveFilters(ThemeData theme) {
+    return AnimatedBuilder(
+      animation: _viewModel,
+      builder: (context, _) {
+        if (_viewModel.genreFilter.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.only(left: 24.0, right: 24.0, bottom: 8.0),
+          child: Wrap(
+            spacing: 8.0,
+            runSpacing: 4.0,
+            children: _viewModel.genreFilter.map((genre) {
+              return Chip(
+                label: Text(genre.name),
+                onDeleted: () {
+                  final newFilter = List<Genre>.from(_viewModel.genreFilter)
+                    ..remove(genre);
+                  _viewModel.updateGenreFilter(newFilter);
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -221,7 +314,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               itemBuilder: (context) => [
-                // Divider with label for filter section
                 PopupMenuItem(
                   enabled: false,
                   child: Text(
@@ -233,121 +325,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Filter options
-                PopupMenuItem(
-                  value: 'filter_all',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color: _viewModel.itemTypeFilter == ItemTypeFilter.all
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('All Items'),
-                    ],
-                  ),
+                _buildFilterOptionItem(theme, ItemTypeFilter.all, 'All Items'),
+                _buildFilterOptionItem(
+                  theme,
+                  ItemTypeFilter.novels,
+                  'Novels Only',
                 ),
-                PopupMenuItem(
-                  value: 'filter_novels',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color:
-                            _viewModel.itemTypeFilter == ItemTypeFilter.novels
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Novels Only'),
-                    ],
-                  ),
+                _buildFilterOptionItem(
+                  theme,
+                  ItemTypeFilter.lightNovels,
+                  'Light Novels Only',
                 ),
-                PopupMenuItem(
-                  value: 'filter_light_novels',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color:
-                            _viewModel.itemTypeFilter ==
-                                ItemTypeFilter.lightNovels
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Light Novels Only'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'filter_comics',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color:
-                            _viewModel.itemTypeFilter == ItemTypeFilter.comics
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Comics Only'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'filter_manga',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color: _viewModel.itemTypeFilter == ItemTypeFilter.manga
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Manga Only'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'filter_manhwa',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color:
-                            _viewModel.itemTypeFilter == ItemTypeFilter.manhwa
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Manhwa Only'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'filter_manhua',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color:
-                            _viewModel.itemTypeFilter == ItemTypeFilter.manhua
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Manhua Only'),
-                    ],
-                  ),
-                ),
-                // Divider between filter and sort sections
+                _buildFilterOptionItem(
+                    theme, ItemTypeFilter.comics, 'Comics Only'),
+                _buildFilterOptionItem(
+                    theme, ItemTypeFilter.manga, 'Manga Only'),
+                _buildFilterOptionItem(
+                    theme, ItemTypeFilter.manhwa, 'Manhwa Only'),
+                _buildFilterOptionItem(
+                    theme, ItemTypeFilter.manhua, 'Manhua Only'),
                 const PopupMenuDivider(),
-                // Divider with label for sort section
                 PopupMenuItem(
                   enabled: false,
                   child: Text(
@@ -359,79 +356,57 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Sort options
-                PopupMenuItem(
-                  value: 'sort_title',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color: _viewModel.sortOption == SortOption.byTitle
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Title'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'sort_author',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color: _viewModel.sortOption == SortOption.byAuthor
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Author'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'sort_date',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color: _viewModel.sortOption == SortOption.byDate
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Recently Added'),
-                    ],
-                  ),
-                ),
+                _buildSortOptionItem(theme, SortOption.byTitle, 'Title'),
+                _buildSortOptionItem(theme, SortOption.byAuthor, 'Author'),
+                _buildSortOptionItem(theme, SortOption.byDate, 'Recently Added'),
               ],
               onSelected: (value) {
                 // Handle filter selection
-                if (value == 'filter_all') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.all);
-                } else if (value == 'filter_novels') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.novels);
-                } else if (value == 'filter_light_novels') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.lightNovels);
-                } else if (value == 'filter_comics') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.comics);
-                } else if (value == 'filter_manga') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.manga);
-                } else if (value == 'filter_manhwa') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.manhwa);
-                } else if (value == 'filter_manhua') {
-                  _viewModel.updateItemTypeFilter(ItemTypeFilter.manhua);
-                }
-                // Handle sort selection
-                else if (value == 'sort_title') {
-                  _viewModel.updateSortOption(SortOption.byTitle);
-                } else if (value == 'sort_author') {
-                  _viewModel.updateSortOption(SortOption.byAuthor);
-                } else if (value == 'sort_date') {
-                  _viewModel.updateSortOption(SortOption.byDate);
+                switch (value) {
+                  case 'filter_all':
+                    _viewModel.updateItemTypeFilter(ItemTypeFilter.all);
+                    break;
+                  case 'filter_novels':
+                    _viewModel.updateItemTypeFilter(ItemTypeFilter.novels);
+                    break;
+                  case 'filter_lightNovels':
+                    _viewModel.updateItemTypeFilter(ItemTypeFilter.lightNovels);
+                    break;
+                  case 'filter_comics':
+                    _viewModel.updateItemTypeFilter(ItemTypeFilter.comics);
+                    break;
+                  case 'filter_manga':
+                    _viewModel.updateItemTypeFilter(ItemTypeFilter.manga);
+                    break;
+                  case 'filter_manhwa':
+                    _viewModel.updateItemTypeFilter(ItemTypeFilter.manhwa);
+                    break;
+                  case 'filter_manhua':
+                    _viewModel.updateItemTypeFilter(ItemTypeFilter.manhua);
+                    break;
+                  case 'sort_byTitle':
+                    _viewModel.updateSortOption(SortOption.byTitle);
+                    break;
+                  case 'sort_byAuthor':
+                    _viewModel.updateSortOption(SortOption.byAuthor);
+                    break;
+                  case 'sort_byDate':
+                    _viewModel.updateSortOption(SortOption.byDate);
+                    break;
                 }
               },
+            ),
+          ),
+          const SizedBox(width: 16),
+          OutlinedButton.icon(
+            onPressed: _showGenreFilterDialog,
+            icon: const Icon(Icons.filter_list),
+            label: const Text('Genres'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -506,6 +481,46 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
       child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
+    );
+  }
+
+  /// Helper to build a filter option menu item
+  PopupMenuItem<String> _buildFilterOptionItem(
+      ThemeData theme, ItemTypeFilter filter, String text) {
+    return PopupMenuItem(
+      value: 'filter_${filter.name}',
+      child: Row(
+        children: [
+          Icon(
+            Icons.check,
+            color: _viewModel.itemTypeFilter == filter
+                ? theme.colorScheme.primary
+                : Colors.transparent,
+          ),
+          const SizedBox(width: 8),
+          Text(text),
+        ],
+      ),
+    );
+  }
+
+  /// Helper to build a sort option menu item
+  PopupMenuItem<String> _buildSortOptionItem(
+      ThemeData theme, SortOption sortOption, String text) {
+    return PopupMenuItem(
+      value: 'sort_${sortOption.name}',
+      child: Row(
+        children: [
+          Icon(
+            Icons.check,
+            color: _viewModel.sortOption == sortOption
+                ? theme.colorScheme.primary
+                : Colors.transparent,
+          ),
+          const SizedBox(width: 8),
+          Text(text),
+        ],
+      ),
     );
   }
 }

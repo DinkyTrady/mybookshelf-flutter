@@ -1,18 +1,17 @@
-import 'package:web_flut/models/books/comic_type.dart';
 import 'package:flutter/material.dart';
+import 'package:getwidget/getwidget.dart';
+import 'package:web_flut/components/custom_text_form_field.dart';
+import 'package:web_flut/data/default_data.dart';
 import 'package:web_flut/models/books/base_book.dart';
-import 'package:web_flut/models/books/novel.dart';
 import 'package:web_flut/models/books/comic.dart';
-import 'package:web_flut/models/books/light_novel.dart';
-import 'package:web_flut/models/users/author.dart';
+import 'package:web_flut/models/books/book_type.dart';
+
+import 'package:web_flut/models/books/novel.dart';
 import 'package:web_flut/models/genre.dart';
 import 'package:web_flut/models/language.dart';
-import 'package:web_flut/components/custom_text_form_field.dart';
+import 'package:web_flut/models/users/author.dart';
 import 'dart:math' as math;
 
-enum BookType { novel, lightNovel, comic, manga, manhwa, manhua }
-
-/// A form for adding/editing library items (Books and Comics)
 class BookForm extends StatefulWidget {
   final BaseBook? item;
   final BookType bookType;
@@ -26,29 +25,24 @@ class BookForm extends StatefulWidget {
 class BookFormState extends State<BookForm> {
   final _formKey = GlobalKey<FormState>();
 
-  // Common controllers
   late TextEditingController _titleController;
   late TextEditingController _authorFirstNameController;
   late TextEditingController _authorLastNameController;
   late TextEditingController _authorBiographyController;
   late TextEditingController _summaryController;
   late TextEditingController _coverImageUrlController;
-  late TextEditingController _languageNameController;
-  late TextEditingController _languageCodeController;
 
-  // Book-specific controllers (Novel, LightNovel)
+  Language? _selectedLanguage;
+  List<Genre> _selectedGenres = [];
+  BookType? _selectedComicType;
+
   late TextEditingController _pageCountController;
   late TextEditingController _currentPageController;
 
-  // Comic-specific controllers (Comic, Manga, Manhwa, Manhua)
-  late TextEditingController
-  _comicTypeController; // e.g., Manga, Manhwa, Manhua
-  late TextEditingController _genresController; // Comma separated genres
   late TextEditingController _chaptersController;
   late TextEditingController _currentChapterController;
-  late TextEditingController _statusController; // ongoing, completed
+  late TextEditingController _statusController;
 
-  // Reading status
   bool _isReading = false;
   bool _isFinished = false;
 
@@ -58,9 +52,7 @@ class BookFormState extends State<BookForm> {
     _initializeControllers();
   }
 
-  /// Initialize controllers with values from item or empty values
   void _initializeControllers() {
-    // Common controllers
     _titleController = TextEditingController(text: widget.item?.title ?? '');
     _authorFirstNameController = TextEditingController(
       text: widget.item?.author.firstName ?? '',
@@ -77,16 +69,20 @@ class BookFormState extends State<BookForm> {
     _coverImageUrlController = TextEditingController(
       text: widget.item?.coverImageUrl ?? '',
     );
-    _languageNameController = TextEditingController(
-      text: widget.item?.language?.name ?? '',
-    );
-    _languageCodeController = TextEditingController(
-      text: widget.item?.language?.code ?? '',
-    );
 
-    // Book-specific controllers (Novel, LightNovel)
-    if (widget.item is Novel || widget.item is LightNovel) {
-      final book = widget.item as BaseBook;
+    try {
+      _selectedLanguage = widget.item?.language != null
+          ? defaultLanguages
+              .firstWhere((lang) => lang.id == widget.item!.language!.id)
+          : defaultLanguages[1];
+    } catch (e) {
+      _selectedLanguage = defaultLanguages[1]; // Default to English on error
+    }
+
+    _selectedGenres = widget.item?.genres ?? [];
+
+    if (widget.item is Novel) {
+      final book = widget.item as Novel;
       _pageCountController = TextEditingController(
         text: book.pageCount?.toString() ?? '0',
       );
@@ -98,15 +94,9 @@ class BookFormState extends State<BookForm> {
       _currentPageController = TextEditingController(text: '0');
     }
 
-    // Comic-specific controllers (Comic, Manga, Manhwa, Manhua)
     if (widget.item is Comic) {
       final comic = widget.item as Comic;
-      _comicTypeController = TextEditingController(
-        text: comic.type?.toString().split('.').last ?? '',
-      );
-      _genresController = TextEditingController(
-        text: comic.genres?.map((g) => g.name).join(', ') ?? '',
-      );
+      _selectedComicType = comic.type;
       _chaptersController = TextEditingController(
         text: comic.chapters?.toString() ?? '0',
       );
@@ -117,48 +107,44 @@ class BookFormState extends State<BookForm> {
         text: comic.status ?? 'Ongoing',
       );
     } else {
-      _comicTypeController = TextEditingController(
-        text: widget.bookType == BookType.manga
-            ? 'Manga'
-            : widget.bookType == BookType.manhwa
-            ? 'Manhwa'
-            : widget.bookType == BookType.manhua
-            ? 'Manhua'
-            : 'Comic',
-      );
-      _genresController = TextEditingController(text: '');
+      switch (widget.bookType) {
+        case BookType.manga:
+          _selectedComicType = BookType.manga;
+          break;
+        case BookType.manhwa:
+          _selectedComicType = BookType.manhwa;
+          break;
+        case BookType.manhua:
+          _selectedComicType = BookType.manhua;
+          break;
+        default:
+          _selectedComicType = BookType.comic;
+      }
       _chaptersController = TextEditingController(text: '0');
       _currentChapterController = TextEditingController(text: '0');
       _statusController = TextEditingController(text: 'Ongoing');
     }
 
-    // Reading status
     _isReading = widget.item?.isReading ?? false;
     _isFinished = widget.item?.isFinished ?? false;
   }
 
   @override
   void dispose() {
-    // Dispose all controllers
     _titleController.dispose();
     _authorFirstNameController.dispose();
     _authorLastNameController.dispose();
     _authorBiographyController.dispose();
     _summaryController.dispose();
     _coverImageUrlController.dispose();
-    _languageNameController.dispose();
-    _languageCodeController.dispose();
     _pageCountController.dispose();
     _currentPageController.dispose();
-    _comicTypeController.dispose();
-    _genresController.dispose();
     _chaptersController.dispose();
     _currentChapterController.dispose();
     _statusController.dispose();
     super.dispose();
   }
 
-  /// Save and get the library item (BaseBook subclass)
   BaseBook? saveAndGetItem() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -171,22 +157,12 @@ class BookFormState extends State<BookForm> {
             ? _authorLastNameController.text
             : null,
         biography: _authorBiographyController.text,
-        dateOfBirth: DateTime.now(), // Placeholder, ideally from input
+        dateOfBirth: widget.item?.author.dateOfBirth ?? DateTime.now(),
       );
-      final language =
-          _languageNameController.text.isNotEmpty &&
-              _languageCodeController.text.isNotEmpty
-          ? Language(
-              id:
-                  widget.item?.language?.id ??
-                  math.Random().nextInt(10000).toString(),
-              name: _languageNameController.text,
-              code: _languageCodeController.text,
-            )
-          : null;
 
       switch (widget.bookType) {
         case BookType.novel:
+        case BookType.lightNovel:
           return Novel(
             id: id,
             title: _titleController.text,
@@ -198,54 +174,31 @@ class BookFormState extends State<BookForm> {
             isReading: _isReading,
             isFinished: _isFinished,
             updatedAt: DateTime.now(),
-            language: language,
-          );
-        case BookType.lightNovel:
-          return LightNovel(
-            id: id,
-            title: _titleController.text,
-            author: author,
-            summary: _summaryController.text,
-            coverImageUrl: _coverImageUrlController.text,
-            pageCount: int.tryParse(_pageCountController.text) ?? 0,
-            currentPage: int.tryParse(_currentPageController.text) ?? 0,
-            isReading: _isReading,
-            isFinished: _isFinished,
-            updatedAt: DateTime.now(),
-            language: language,
+            language: _selectedLanguage,
+            genres: _selectedGenres.isNotEmpty ? _selectedGenres : null,
+            type: widget.bookType == BookType.lightNovel
+                ? BookType.lightNovel
+                : BookType.novel,
           );
         case BookType.comic:
         case BookType.manga:
         case BookType.manhwa:
         case BookType.manhua:
-          final genres = _genresController.text
-              .split(',')
-              .map(
-                (e) => Genre(
-                  id: math.Random().nextInt(10000).toString(),
-                  name: e.trim(),
-                ),
-              )
-              .where((element) => element.name.isNotEmpty)
-              .toList();
           return Comic(
             id: id,
             title: _titleController.text,
             author: author,
             summary: _summaryController.text,
             coverImageUrl: _coverImageUrlController.text,
-            type: ComicType.values.firstWhere(
-              (e) => e.toString().split('.').last == _comicTypeController.text,
-              orElse: () => ComicType.comic,
-            ),
-            genres: genres.isNotEmpty ? genres : null,
+            type: _selectedComicType ?? BookType.comic,
+            genres: _selectedGenres.isNotEmpty ? _selectedGenres : null,
             chapters: int.tryParse(_chaptersController.text) ?? 0,
             currentChapter: int.tryParse(_currentChapterController.text) ?? 0,
             status: _statusController.text,
             isReading: _isReading,
             isFinished: _isFinished,
             updatedAt: DateTime.now(),
-            language: language,
+            language: _selectedLanguage,
           );
       }
     }
@@ -259,10 +212,7 @@ class BookFormState extends State<BookForm> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Common fields
           _buildCommonFields(),
-
-          // Type-specific fields
           if (widget.bookType == BookType.novel ||
               widget.bookType == BookType.lightNovel)
             _buildBookFields()
@@ -271,70 +221,90 @@ class BookFormState extends State<BookForm> {
               widget.bookType == BookType.manhwa ||
               widget.bookType == BookType.manhua)
             _buildComicFields(),
-
-          // Reading status
           _buildReadingStatusFields(),
-        ],
+        ]
+            .map((widget) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: widget))
+            .toList(),
       ),
     );
   }
 
-  /// Build common fields for all book types
   Widget _buildCommonFields() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CustomTextFormField(
           controller: _titleController,
           labelText: 'Title',
           validator: _validateRequired,
         ),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _authorFirstNameController,
           labelText: 'Author First Name',
           validator: _validateRequired,
         ),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _authorLastNameController,
           labelText: 'Author Last Name (Optional)',
         ),
-        CustomTextFormField(
-          controller: _authorBiographyController,
-          labelText: 'Author Biography',
-          maxLines: 3,
-          validator: _validateRequired,
-        ),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _summaryController,
           labelText: 'Summary',
           maxLines: 3,
           validator: _validateRequired,
         ),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _coverImageUrlController,
           labelText: 'Cover Image URL',
         ),
-        CustomTextFormField(
-          controller: _languageNameController,
-          labelText: 'Language Name (e.g., English)',
-        ),
-        CustomTextFormField(
-          controller: _languageCodeController,
-          labelText: 'Language Code (e.g., en)',
+        const SizedBox(height: 16),
+        DropdownButtonFormField<Language>(
+          initialValue: _selectedLanguage,
+          decoration: InputDecoration(
+            labelText: 'Language',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          items: defaultLanguages.map((Language language) {
+            return DropdownMenuItem<Language>(
+              value: language,
+              child: Text(language.name),
+            );
+          }).toList(),
+          onChanged: (Language? newValue) {
+            setState(() {
+              _selectedLanguage = newValue;
+            });
+          },
+          validator: (value) =>
+              value == null ? 'Please select a language' : null,
         ),
       ],
     );
   }
 
-  /// Build Book-specific fields (for Novel and LightNovel)
   Widget _buildBookFields() {
     return Column(
       children: [
+        const SizedBox(height: 16),
+        _buildGenreSelector(),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _pageCountController,
           labelText: 'Page Count',
           keyboardType: TextInputType.number,
           validator: _validateNumber,
         ),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _currentPageController,
           labelText: 'Current Page',
@@ -345,31 +315,50 @@ class BookFormState extends State<BookForm> {
     );
   }
 
-  /// Build Comic-specific fields (for Comic, Manga, Manhwa, Manhua)
   Widget _buildComicFields() {
     return Column(
       children: [
-        CustomTextFormField(
-          controller: _comicTypeController,
-          labelText: 'Type (e.g., Manga, Manhwa, Manhua)',
-          validator: _validateRequired,
+        const SizedBox(height: 16),
+        DropdownButtonFormField<BookType>(
+          initialValue: _selectedComicType,
+          decoration: InputDecoration(
+            labelText: 'Type',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          items: BookType.values.map((BookType type) {
+            return DropdownMenuItem<BookType>(
+              value: type,
+              child: Text(type.name[0].toUpperCase() + type.name.substring(1)),
+            );
+          }).toList(),
+          onChanged: (BookType? newValue) {
+            setState(() {
+              _selectedComicType = newValue;
+            });
+          },
+          validator: (value) => value == null ? 'Please select a type' : null,
         ),
-        CustomTextFormField(
-          controller: _genresController,
-          labelText: 'Genres (comma separated)',
-        ),
+        const SizedBox(height: 16),
+        _buildGenreSelector(),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _chaptersController,
           labelText: 'Total Chapters',
           keyboardType: TextInputType.number,
           validator: _validateNumber,
         ),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _currentChapterController,
           labelText: 'Current Chapter',
           keyboardType: TextInputType.number,
           validator: _validateNumber,
         ),
+        const SizedBox(height: 16),
         CustomTextFormField(
           controller: _statusController,
           labelText: 'Status (Ongoing/Completed)',
@@ -379,7 +368,47 @@ class BookFormState extends State<BookForm> {
     );
   }
 
-  /// Build reading status fields
+  Widget _buildGenreSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Genres', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 8),
+        GFMultiSelect<String>(
+          items: defaultGenres.map((g) => g.name).toList(),
+          onSelect: (selectedNames) {
+            setState(() {
+              _selectedGenres = defaultGenres
+                  .where((genre) => selectedNames.contains(genre.name))
+                  .toList();
+            });
+          },
+          initialSelectedItemsIndex: _selectedGenres.map((g) => defaultGenres.indexWhere((dg) => dg.id == g.id)).where((i) => i != -1).toList(),
+          dropdownTitleTileText: 'Select Genres',
+          dropdownTitleTileColor: Theme.of(context).scaffoldBackgroundColor,
+          dropdownTitleTileMargin: const EdgeInsets.all(0),
+          dropdownTitleTilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          dropdownUnderlineBorder: const BorderSide(color: Colors.transparent),
+          dropdownTitleTileBorder: Border.all(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(50),
+            width: 1,
+          ),
+          dropdownTitleTileBorderRadius: BorderRadius.circular(12),
+          expandedIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+          collapsedIcon: const Icon(Icons.keyboard_arrow_up, color: Colors.black54),
+          submitButton: const Text('OK'),
+          cancelButton: const Text('Cancel'),
+          dropdownBgColor: Theme.of(context).scaffoldBackgroundColor,
+          activeBgColor: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.2).round()),
+          activeBorderColor: Theme.of(context).colorScheme.primary,
+          type: GFCheckboxType.basic,
+          activeIcon: const Icon(Icons.check, color: Colors.white, size: 15),
+          inactiveIcon: null,
+        ),
+      ],
+    );
+  }
+
   Widget _buildReadingStatusFields() {
     return Column(
       children: [
@@ -389,8 +418,7 @@ class BookFormState extends State<BookForm> {
           onChanged: (value) {
             setState(() {
               _isReading = value;
-              // If finished, can't be reading
-              if (_isFinished && _isReading) {
+              if (_isReading) {
                 _isFinished = false;
               }
             });
@@ -402,8 +430,7 @@ class BookFormState extends State<BookForm> {
           onChanged: (value) {
             setState(() {
               _isFinished = value;
-              // If reading, can't be finished
-              if (_isReading && _isFinished) {
+              if (_isFinished) {
                 _isReading = false;
               }
             });
@@ -413,7 +440,6 @@ class BookFormState extends State<BookForm> {
     );
   }
 
-  /// Validate required fields
   String? _validateRequired(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'This field is required';
@@ -421,7 +447,6 @@ class BookFormState extends State<BookForm> {
     return null;
   }
 
-  /// Validate number fields
   String? _validateNumber(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'This field is required';
