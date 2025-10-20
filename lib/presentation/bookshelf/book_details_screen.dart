@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:web_flut/models/books/base_book.dart';
 import 'package:web_flut/models/books/book_type.dart';
 import 'package:web_flut/models/books/comic.dart';
-
 import 'package:web_flut/models/books/novel.dart';
 import 'package:web_flut/presentation/bookshelf/book_form.dart';
 import 'package:web_flut/services/bookshelf_service.dart';
@@ -264,7 +263,11 @@ class _LibraryItemDetailsScreenState extends State<LibraryItemDetailsScreen> {
             children: [
               _buildInfoItem(theme, 'Author', novel.author.fullName),
               const SizedBox(height: 16),
-              _buildInfoItem(theme, 'Type', novel.type.toString().split('.').last),
+              _buildInfoItem(
+                theme,
+                'Type',
+                novel.type.toString().split('.').last,
+              ),
               const SizedBox(height: 16),
               _buildInfoItem(theme, 'Status', novel.getStatusText()),
               const SizedBox(height: 16),
@@ -285,7 +288,6 @@ class _LibraryItemDetailsScreenState extends State<LibraryItemDetailsScreen> {
           ),
         ),
       );
-
     } else if (widget.item is Comic) {
       final comic = widget.item as Comic;
       final genreNames = comic.genres?.map((g) => g.name).join(', ') ?? 'N/A';

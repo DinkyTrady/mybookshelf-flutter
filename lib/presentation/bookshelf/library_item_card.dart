@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:web_flut/models/books/base_book.dart';
 import 'package:web_flut/models/books/book_type.dart';
 import 'package:web_flut/models/books/comic.dart';
-
-
 import 'package:web_flut/models/books/novel.dart';
 import 'package:web_flut/presentation/home/home_view_model.dart';
 import 'package:web_flut/presentation/bookshelf/book_details_screen.dart';

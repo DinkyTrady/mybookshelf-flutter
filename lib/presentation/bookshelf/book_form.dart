@@ -5,7 +5,6 @@ import 'package:web_flut/data/default_data.dart';
 import 'package:web_flut/models/books/base_book.dart';
 import 'package:web_flut/models/books/comic.dart';
 import 'package:web_flut/models/books/book_type.dart';
-
 import 'package:web_flut/models/books/novel.dart';
 import 'package:web_flut/models/genre.dart';
 import 'package:web_flut/models/language.dart';
