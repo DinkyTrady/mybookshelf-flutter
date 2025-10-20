@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 10),
-                SpinKitThreeBounce(color: theme.colorScheme.primary, duration: Duration(milliseconds: 1000),),
+                SpinKitWaveSpinner(color: theme.colorScheme.primary, duration: Duration(milliseconds: 1000),),
                 const SizedBox(height: 10),
                 Text(
                   'Developed by Randy Dinky Saputra',
